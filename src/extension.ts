@@ -31,7 +31,7 @@ function joinLines () {
         return;
     }
 
-    const selectedLine = editor.selection.end.line;
+    const selectedLine = editor.selection.start.line;
     const totalLines = editor.document.lineCount;
     const nextLineNum = selectedLine + 1;
     const lineAfterNextLineNum = nextLineNum + 1;
@@ -47,8 +47,7 @@ function joinLines () {
         const nextLine = editor.document.lineAt(nextLineNum);
         const nextLineText = nextLine.text;
 
-        deleteNextLine(editBuilder, nextLineNum, lineAfterNextLineNum, totalLines, nextLineText);
-        insertText(editor, editBuilder, selectedLine, nextLineText);
+        joinThem(editor, editBuilder, selectedLine, nextLineText);
 
     }).then(() => {
         console.log('JoinLines: Line joined');
@@ -57,30 +56,16 @@ function joinLines () {
     });
 }
 
-function deleteNextLine (editBuilder, nextLineNum, lineAfterNextLineNum, totalLines, nextLineText) {
-    const nextLinePos = new vscode.Position(nextLineNum, 0);
-    let lineAfterNextPost;
-
-    if(lineAfterNextLineNum === totalLines){
-        lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
-    } else {
-        lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
-    }
-
-    const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
-
-    /** Delete next line */
-    editBuilder.delete(rangeToDelete);
-}
-
-function insertText (editor, editBuilder, line, text) {
+function joinThem (editor, editBuilder, line, text){
     const docLine = editor.document.lineAt(line);
     const docLineText = docLine.text;
     const location = new vscode.Position(line, docLineText.length);
     const textToInsert = text === '' ? text : ' ' + text;
 
+    const rangeToDelete = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line + 1, text.length));
+
     /** Append next lines text to the current one with a space between them */
-    editBuilder.insert(location, textToInsert);
+    editBuilder.replace(rangeToDelete, docLineText + textToInsert);
 }
 
 /** this method is called when your extension is deactivated */
