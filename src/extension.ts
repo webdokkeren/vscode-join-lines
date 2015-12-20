@@ -25,35 +25,27 @@ export function activate(context: vscode.ExtensionContext) {
 function joinLines () {
     const editor = vscode.window.activeTextEditor;
 
-    if(editor != undefined){
-        const selection = editor.selection;
-        const selectionEnd = selection.end;
-        const selectedLine = selectionEnd.line;
+    /** If editor is undefined just return */
+    if(editor == undefined) {
+        console.log('NO EDITOR');
+        return;
+    }
 
-        editor.edit((editBuilder) => {
-            const totalLines = editor.document.lineCount;
-            const nextLineNum = selectedLine + 1;
-            const lineAfterNextLineNum = nextLineNum + 1;
+    editor.edit((editBuilder) => {
+        const selectedLine = editor.selection.end.line;
+        const totalLines = editor.document.lineCount;
+        const nextLineNum = selectedLine + 1;
+        const lineAfterNextLineNum = nextLineNum + 1;
 
-            if(lineAfterNextLineNum > totalLines) {
-                vscode.window.showInformationMessage('NO LINES BENEETH');
-                return;
-            }
+        if(lineAfterNextLineNum > totalLines) {
+            vscode.window.showInformationMessage('NO LINES BENEETH');
+            return;
+        }
 
-            const nextLine = editor.document.lineAt(nextLineNum);
-            const nextLineText = nextLine.text;
+        const nextLine = editor.document.lineAt(nextLineNum);
+        const nextLineText = nextLine.text;
 
-            const nextLinePos = new vscode.Position(nextLineNum, 0);
-            let lineAfterNextPost;
-
-            if(lineAfterNextLineNum === totalLines){
-                lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
-            } else {
-                lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
-            }
-
-            const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
-
+        function insertText () {
             var hep = editor.document.lineAt(selectedLine);
             var hepi = hep.text;
             var heo = hepi.length;
@@ -61,23 +53,34 @@ function joinLines () {
             // Insert line
             let location = new vscode.Position(selectedLine, heo);
 
-            editBuilder.delete(rangeToDelete);
             editBuilder.insert(location, ' ' + nextLineText);
+        }
 
-        }).then(() => {
-            console.log('Line joined');
-        }, (err) => {
-            console.log('Line joint error:', err);
-        });
+        function deleteNextLine () {
+            const nextLinePos = new vscode.Position(nextLineNum, 0);
+            let lineAfterNextPost;
 
-        // Display a message box to the user
-        vscode.window.showInformationMessage('I SHALL JOIN YOU! THE LINE IS:' + selectedLine);
-    } else {
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Y U NO EDITOR!');
-    }
+            if(lineAfterNextLineNum === totalLines){
+                //TODO: If last line is empty, should we delete it ?
+                lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
+            } else {
+                lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+            }
+
+            const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
+            editBuilder.delete(rangeToDelete);
+        }
+
+        deleteNextLine();
+        insertText();
+
+    }).then(() => {
+        console.log('Line joined');
+    }, (err) => {
+        console.log('Line joint error:', err);
+    });
 }
 
-// this method is called when your extension is deactivated
+/** this method is called when your extension is deactivated */
 export function deactivate() {
 }
