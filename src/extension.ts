@@ -27,58 +27,60 @@ function joinLines () {
 
     /** If editor is undefined just return */
     if(editor == undefined) {
-        console.log('NO EDITOR');
+        console.log('JoinLines: No editor');
         return;
     }
 
+    const selectedLine = editor.selection.end.line;
+    const totalLines = editor.document.lineCount;
+    const nextLineNum = selectedLine + 1;
+    const lineAfterNextLineNum = nextLineNum + 1;
+
+    /** Return if there are no lines below the current selected one */
+    if(lineAfterNextLineNum > totalLines) {
+        console.log('JoinLines: No lines below to join');
+        return;
+    }
+
+    /** Let the "joining" begin */
     editor.edit((editBuilder) => {
-        const selectedLine = editor.selection.end.line;
-        const totalLines = editor.document.lineCount;
-        const nextLineNum = selectedLine + 1;
-        const lineAfterNextLineNum = nextLineNum + 1;
-
-        if(lineAfterNextLineNum > totalLines) {
-            vscode.window.showInformationMessage('NO LINES BENEETH');
-            return;
-        }
-
         const nextLine = editor.document.lineAt(nextLineNum);
         const nextLineText = nextLine.text;
 
-        function insertText () {
-            const currentSelectedLine = editor.document.lineAt(selectedLine);
-            const currentSelectedLineText = currentSelectedLine.text;
-            const location = new vscode.Position(selectedLine, currentSelectedLineText.length);
-
-            /** Append next lines text to the current one with a space between them */
-            editBuilder.insert(location, ' ' + nextLineText);
-        }
-
-        function deleteNextLine () {
-            const nextLinePos = new vscode.Position(nextLineNum, 0);
-            let lineAfterNextPost;
-
-            if(lineAfterNextLineNum === totalLines){
-                //TODO: If last line is empty, should we delete it ?
-                lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
-            } else {
-                lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
-            }
-
-            const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
-
-            /** Delete next line */
-            editBuilder.delete(rangeToDelete);
-        }
-
-        deleteNextLine();
-        insertText();
+        deleteNextLine(editBuilder, nextLineNum, lineAfterNextLineNum, totalLines, nextLineText);
+        insertText(editor, editBuilder, selectedLine, nextLineText);
 
     }).then(() => {
-        console.log('Line joined');
+        console.log('JoinLines: Line joined');
     }, (err) => {
-        console.log('Line joint error:', err);
+        console.log('JoinLines: Line joint error:', err);
     });
+}
+
+function deleteNextLine (editBuilder, nextLineNum, lineAfterNextLineNum, totalLines, nextLineText) {
+    const nextLinePos = new vscode.Position(nextLineNum, 0);
+    let lineAfterNextPost;
+
+    if(lineAfterNextLineNum === totalLines){
+        lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
+    } else {
+        lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+    }
+
+    const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
+
+    /** Delete next line */
+    editBuilder.delete(rangeToDelete);
+}
+
+function insertText (editor, editBuilder, line, text) {
+    const docLine = editor.document.lineAt(line);
+    const docLineText = docLine.text;
+    const location = new vscode.Position(line, docLineText.length);
+    const textToInsert = text === '' ? text : ' ' + text;
+
+    /** Append next lines text to the current one with a space between them */
+    editBuilder.insert(location, textToInsert);
 }
 
 /** this method is called when your extension is deactivated */
