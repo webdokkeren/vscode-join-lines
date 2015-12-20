@@ -2,7 +2,11 @@
   "name": "joinlines",
   "displayName": "JoinLines",
   "description": "Adds join lines command to VS Code",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "repository": {
+      "type": "git",
+      "url": "https://github.com/webdokkeren/vscode-join-lines"
+  },
   "publisher": "webdokkeren",
   "engines": {
     "vscode": "^0.10.1"
@@ -11,19 +15,19 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.joinLines"
+    "onCommand:joinLines.joinLines"
   ],
   "main": "./out/src/extension",
   "contributes": {
     "commands": [
       {
-        "command": "extension.joinLines",
+        "command": "joinLines.joinLines",
         "title": "Join lines"
       }
     ],
     "keybindings": [
       {
-        "command": "extension.joinLines",
+        "command": "joinLines.joinLines",
         "key": "Ctrl+j"
       }
     ]

@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 	 * Now we provide the implementation of the command with registerCommand
 	 * The commandId parameter must match the command field in package.json
      */
-	var disposable = vscode.commands.registerCommand('extension.joinLines', () => {
+	var disposable = vscode.commands.registerCommand('joinLines.joinLines', () => {
         joinLines();
 	});
 
