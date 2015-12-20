@@ -24,13 +24,31 @@ export function activate(context: vscode.ExtensionContext) {
             const selectedLine = selectionEnd.line;
 
             editor.edit((editBuilder) => {
+                const totalLines = editor.document.lineCount;
+                const nextLineNum = selectedLine + 1;
+                const lineAfterNextLineNum = nextLineNum + 1;
 
-                const specificLine = editor.document.lineAt(1);
-                const specificLineText = specificLine.text;
-                const specificLineTextLength = specificLineText.length;
+                if(lineAfterNextLineNum > totalLines) {
+                    vscode.window.showInformationMessage('NO LINES BENEETH');
+                    return;
+                }
 
-                const lineToDelete = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(1, 0));
-                editBuilder.delete(lineToDelete);
+                const nextLine = editor.document.lineAt(nextLineNum);
+                const nextLineText = nextLine.text;
+
+                const nextLinePos = new vscode.Position(nextLineNum, 0);
+                const lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+
+                const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
+
+                var hep = editor.document.lineAt(selectedLine);
+                var hepi = hep.text;
+                var heo = hepi.length;
+                // Insert line
+                let location = new vscode.Position(selectedLine, heo);
+
+                editBuilder.delete(rangeToDelete);
+                editBuilder.insert(location, ' ' + nextLineText);
 
             }).then(() => {
                 console.log('Line joined');
