@@ -16,63 +16,66 @@ export function activate(context: vscode.ExtensionContext) {
 	var disposable = vscode.commands.registerCommand('extension.sayHello', () => {
 		// The code you place here will be executed every time your command is executed
 
-        const editor = vscode.window.activeTextEditor;
-
-        if(editor != undefined){
-            const selection = editor.selection;
-            const selectionEnd = selection.end;
-            const selectedLine = selectionEnd.line;
-
-            editor.edit((editBuilder) => {
-                const totalLines = editor.document.lineCount;
-                const nextLineNum = selectedLine + 1;
-                const lineAfterNextLineNum = nextLineNum + 1;
-
-                if(lineAfterNextLineNum > totalLines) {
-                    vscode.window.showInformationMessage('NO LINES BENEETH');
-                    return;
-                }
-
-                const nextLine = editor.document.lineAt(nextLineNum);
-                const nextLineText = nextLine.text;
-
-                const nextLinePos = new vscode.Position(nextLineNum, 0);
-                let lineAfterNextPost;
-
-                if(lineAfterNextLineNum === totalLines){
-                    lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
-                } else {
-                    lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
-                }
-
-                const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
-
-                var hep = editor.document.lineAt(selectedLine);
-                var hepi = hep.text;
-                var heo = hepi.length;
-
-                // Insert line
-                let location = new vscode.Position(selectedLine, heo);
-
-                editBuilder.delete(rangeToDelete);
-                editBuilder.insert(location, ' ' + nextLineText);
-
-            }).then(() => {
-                console.log('Line joined');
-            }, (err) => {
-                console.log('Line joint error:', err);
-            });
-
-            // Display a message box to the user
-            vscode.window.showInformationMessage('I SHALL JOIN YOU! THE LINE IS:' + selectedLine);
-        } else {
-            // Display a message box to the user
-            vscode.window.showInformationMessage('Y U NO EDITOR!');
-        }
-
+        joinLines();
 	});
 
 	context.subscriptions.push(disposable);
+}
+
+function joinLines () {
+    const editor = vscode.window.activeTextEditor;
+
+    if(editor != undefined){
+        const selection = editor.selection;
+        const selectionEnd = selection.end;
+        const selectedLine = selectionEnd.line;
+
+        editor.edit((editBuilder) => {
+            const totalLines = editor.document.lineCount;
+            const nextLineNum = selectedLine + 1;
+            const lineAfterNextLineNum = nextLineNum + 1;
+
+            if(lineAfterNextLineNum > totalLines) {
+                vscode.window.showInformationMessage('NO LINES BENEETH');
+                return;
+            }
+
+            const nextLine = editor.document.lineAt(nextLineNum);
+            const nextLineText = nextLine.text;
+
+            const nextLinePos = new vscode.Position(nextLineNum, 0);
+            let lineAfterNextPost;
+
+            if(lineAfterNextLineNum === totalLines){
+                lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
+            } else {
+                lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+            }
+
+            const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
+
+            var hep = editor.document.lineAt(selectedLine);
+            var hepi = hep.text;
+            var heo = hepi.length;
+
+            // Insert line
+            let location = new vscode.Position(selectedLine, heo);
+
+            editBuilder.delete(rangeToDelete);
+            editBuilder.insert(location, ' ' + nextLineText);
+
+        }).then(() => {
+            console.log('Line joined');
+        }, (err) => {
+            console.log('Line joint error:', err);
+        });
+
+        // Display a message box to the user
+        vscode.window.showInformationMessage('I SHALL JOIN YOU! THE LINE IS:' + selectedLine);
+    } else {
+        // Display a message box to the user
+        vscode.window.showInformationMessage('Y U NO EDITOR!');
+    }
 }
 
 // this method is called when your extension is deactivated
