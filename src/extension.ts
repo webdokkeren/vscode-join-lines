@@ -31,7 +31,8 @@ function joinLines () {
         return;
     }
 
-    const selectedLine = editor.selection.start.line;
+    const selection = editor.selection;
+    const selectedLine = selection.start.line;
     const totalLines = editor.document.lineCount;
     const nextLineNum = selectedLine + 1;
     const lineAfterNextLineNum = nextLineNum + 1;
@@ -44,15 +45,18 @@ function joinLines () {
 
     /** Let the "joining" begin */
     editor.edit((editBuilder) => {
+        console.log('JoinLines: Joining lines');
         const nextLine = editor.document.lineAt(nextLineNum);
         const nextLineText = nextLine.text;
 
         joinThem(editor, editBuilder, selectedLine, nextLineText);
-
     }).then(() => {
-        console.log('JoinLines: Line joined');
+        var newSelection: vscode.Selection = new vscode.Selection(selection.start.line, selection.start.character, selection.start.line, selection.start.character);
+        var tagSelections: vscode.Selection[] = [newSelection];
+
+        editor.selections = tagSelections;
     }, (err) => {
-        console.log('JoinLines: Line joint error:', err);
+        console.log('JoinLines: Line joined error:', err);
     });
 }
 
@@ -60,12 +64,12 @@ function joinThem (editor, editBuilder, line, text){
     const docLine = editor.document.lineAt(line);
     const docLineText = docLine.text;
     const location = new vscode.Position(line, docLineText.length);
-    const textToInsert = text === '' ? text : ' ' + text;
+    const textToInsert = text === '' ? docLineText + text : docLineText + ' ' + text;
 
     const rangeToDelete = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line + 1, text.length));
 
-    /** Append next lines text to the current one with a space between them */
-    editBuilder.replace(rangeToDelete, docLineText + textToInsert);
+    /** Join the lines using replace */
+    editBuilder.replace(rangeToDelete, textToInsert);
 }
 
 /** this method is called when your extension is deactivated */
