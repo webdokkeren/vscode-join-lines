@@ -1,1 +1,1 @@
-## This extension adds a "joinLines" command to VS Code. It works just like the join lines command in Sublime Text
+# Join lines, trying to mimic join lines like you know it from Sublime Text
