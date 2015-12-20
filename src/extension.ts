@@ -46,13 +46,11 @@ function joinLines () {
         const nextLineText = nextLine.text;
 
         function insertText () {
-            var hep = editor.document.lineAt(selectedLine);
-            var hepi = hep.text;
-            var heo = hepi.length;
+            const currentSelectedLine = editor.document.lineAt(selectedLine);
+            const currentSelectedLineText = currentSelectedLine.text;
+            const location = new vscode.Position(selectedLine, currentSelectedLineText.length);
 
-            // Insert line
-            let location = new vscode.Position(selectedLine, heo);
-
+            /** Append next lines text to the current one with a space between them */
             editBuilder.insert(location, ' ' + nextLineText);
         }
 
@@ -68,6 +66,8 @@ function joinLines () {
             }
 
             const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
+
+            /** Delete next line */
             editBuilder.delete(rangeToDelete);
         }
 
