@@ -1,21 +1,27 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+/**
+ * Import modules
+ * The module 'vscode' contains the VS Code extensibility API
+ */
 import * as vscode from 'vscode';
+import _ = require('lodash');
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+/**
+ * this method is called when the extension is activated
+ * the extension is activated the very first time joinLines is executed
+ */
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
+	/**
+	 * This following lines of code will only be executed once the extension is activated
+     */
 	console.log('Join lines extension activated!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
+	/**
+     * The command has been defined in the package.json file
+	 * Now we provide the implementation of the command with registerCommand
+	 * The commandId parameter must match the command field in package.json
+     */
 	var disposable = vscode.commands.registerCommand('extension.joinLines', () => {
-		// The code you place here will be executed every time your command is executed
-
         joinLines();
 	});
 
@@ -37,6 +43,9 @@ function joinLines () {
     const nextLineNum = selectedLine + 1;
     const lineAfterNextLineNum = nextLineNum + 1;
 
+    const startLine = editor.document.lineAt(selection.end.line);
+    const startText = _.trimRight(startLine.text);
+
     /** Return if there are no lines below the current selected one */
     if(lineAfterNextLineNum > totalLines) {
         console.log('JoinLines: No lines below to join');
@@ -51,8 +60,13 @@ function joinLines () {
 
         joinThem(editor, editBuilder, selectedLine, nextLineText);
     }).then(() => {
-        var newSelection: vscode.Selection = new vscode.Selection(selection.start.line, selection.start.character, selection.start.line, selection.start.character);
-        var tagSelections: vscode.Selection[] = [newSelection];
+        console.log('JoinLines: Lines joined. Setting selection');
+
+        const startLineNum = selection.start.line;
+        const cursorStartPos = startText.length + 1;
+
+        const newSelection: vscode.Selection = new vscode.Selection(startLineNum, cursorStartPos, startLineNum, cursorStartPos);
+        const tagSelections: vscode.Selection[] = [newSelection];
 
         editor.selections = tagSelections;
     }, (err) => {
@@ -62,7 +76,7 @@ function joinLines () {
 
 function joinThem (editor, editBuilder, line, text){
     const docLine = editor.document.lineAt(line);
-    const docLineText = docLine.text;
+    const docLineText = _.trimRight(docLine.text);
     const location = new vscode.Position(line, docLineText.length);
     const textToInsert = text === '' ? docLineText + text : docLineText + ' ' + text;
 
