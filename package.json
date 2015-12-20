@@ -1,9 +1,9 @@
 {
-	"name": "helloworld",
-	"displayName": "HelloWorld",
-	"description": "hello world example",
+	"name": "joinlines",
+	"displayName": "JoinLines",
+	"description": "Adds join lines command to VS Code",
 	"version": "0.0.1",
-	"publisher": "me",
+	"publisher": "Thor Madsen-Holm",
 	"engines": {
 		"vscode": "^0.10.1"
 	},
@@ -11,13 +11,13 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.sayHello"
+		"onCommand:extension.joinLines"
 	],
 	"main": "./out/src/extension",
 	"contributes": {
 		"commands": [{
-			"command": "extension.sayHello",
-			"title": "Hello World"
+			"command": "extension.joinLines",
+			"title": "Join lines"
 		}]
 	},
 	"scripts": {
