@@ -3,7 +3,7 @@
   "displayName": "JoinLines",
   "description": "Adds join lines command to VS Code",
   "version": "0.0.1",
-  "publisher": "Thor Madsen-Holm",
+  "publisher": "webdokkeren",
   "engines": {
     "vscode": "^0.10.1"
   },
