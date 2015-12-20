@@ -11,3 +11,23 @@ So I decided to create an extension that implement's that functionality.
 This is handy if you want to join the following line with the current one without having to go through all the whitespace in between, with this extension installed just use `ctrl+j`
 
 ![Navigation](images/example.gif)
+
+## Installation
+
+### Manual Install
+
+**Mac & Linux**
+```sh
+cd $HOME/.vscode/extensions
+```
+**Windows**
+```sh
+cd %USERPROFILE%\.vscode\extensions
+```
+
+**All Platforms**
+```
+git clone https://github.com/webdokkeren/vscode-join-lines
+cd vscode-join-lines
+npm install
+```
