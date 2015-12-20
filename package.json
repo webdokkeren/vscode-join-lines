@@ -18,7 +18,13 @@
 		"commands": [{
 			"command": "extension.joinLines",
 			"title": "Join lines"
-		}]
+		}],
+        "keybindings": [
+			{
+				"command": "extension.joinLines",
+				"key": "Ctrl+j"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "node ./node_modules/vscode/bin/compile",
