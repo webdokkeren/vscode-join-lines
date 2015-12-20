@@ -37,13 +37,20 @@ export function activate(context: vscode.ExtensionContext) {
                 const nextLineText = nextLine.text;
 
                 const nextLinePos = new vscode.Position(nextLineNum, 0);
-                const lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+                let lineAfterNextPost;
+
+                if(lineAfterNextLineNum === totalLines){
+                    lineAfterNextPost = new vscode.Position(nextLineNum, nextLineText.length);
+                } else {
+                    lineAfterNextPost = new vscode.Position(lineAfterNextLineNum, 0);
+                }
 
                 const rangeToDelete = new vscode.Range(nextLinePos, lineAfterNextPost);
 
                 var hep = editor.document.lineAt(selectedLine);
                 var hepi = hep.text;
                 var heo = hepi.length;
+
                 // Insert line
                 let location = new vscode.Position(selectedLine, heo);
 
