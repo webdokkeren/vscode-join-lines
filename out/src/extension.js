@@ -25,36 +25,31 @@ exports.activate = activate;
 function joinLines(textEditor) {
     /** If editor is undefined just return */
     if (textEditor == undefined) {
-        console.log('JoinLines: No editor');
         return;
     }
+    var document = textEditor.document;
     var selection = textEditor.selection;
     var selectedLine = selection.start.line;
-    var totalLines = textEditor.document.lineCount;
+    var totalLines = document.lineCount;
     var nextLineNum = selectedLine + 1;
     var lineAfterNextLineNum = nextLineNum + 1;
-    var startLine = textEditor.document.lineAt(selection.end.line);
+    var startLine = document.lineAt(selection.end.line);
     var startText = _.trimRight(startLine.text);
     /** Return if there are no lines below the current selected one */
     if (lineAfterNextLineNum > totalLines) {
-        console.log('JoinLines: No lines below to join');
         return;
     }
     /** Let the "joining" begin */
     textEditor.edit(function (editBuilder) {
-        console.log('JoinLines: Joining lines');
-        var nextLine = textEditor.document.lineAt(nextLineNum);
+        var nextLine = document.lineAt(nextLineNum);
         var nextLineText = nextLine.text;
-        joinThem(textEditor, editBuilder, selectedLine, nextLineText);
+        joinThem(document, editBuilder, selectedLine, nextLineText);
     }).then(function () {
-        console.log('JoinLines: Lines joined. Setting selection');
         var startLineNum = selection.start.line;
         var cursorStartPos = startText.length + 1;
         var newSelection = new vscode.Selection(startLineNum, cursorStartPos, startLineNum, cursorStartPos);
         var tagSelections = [newSelection];
         textEditor.selections = tagSelections;
-    }, function (err) {
-        console.log('JoinLines: Line joined error:', err);
     });
 }
 /**
@@ -65,9 +60,9 @@ function joinLines(textEditor) {
  * @param {number} line                         linenumber of the currently selected line
  * @param {string} text                         text from the line below the currently selected on
  */
-function joinThem(editor, editBuilder, line, text) {
+function joinThem(document, editBuilder, line, text) {
     var nextLineText = _.trim(text);
-    var firstLine = editor.document.lineAt(line);
+    var firstLine = document.lineAt(line);
     var firstLineText = _.trimRight(firstLine.text);
     var location = new vscode.Position(line, firstLineText.length);
     var textToInsert = nextLineText === '' ? firstLineText + nextLineText : firstLineText + ' ' + nextLineText;

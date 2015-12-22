@@ -11,10 +11,7 @@
         "type": "git",
         "url": "https://github.com/webdokkeren/vscode-join-lines"
     },
-    "publisher": "webdokkeren",
-    "engines": {
-        "vscode": "^0.10.1"
-    },
+    "publisher": "webdokkeren", "engines": { "vscode": "^0.10.1" },
     "categories": [
         "Other"
     ],
