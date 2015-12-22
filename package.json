@@ -1,46 +1,54 @@
 {
-  "name": "joinlines",
-  "displayName": "JoinLines",
-  "description": "Adds join lines command to VS Code",
-  "version": "0.1.0",
-  "repository": {
-      "type": "git",
-      "url": "https://github.com/webdokkeren/vscode-join-lines"
-  },
-  "publisher": "webdokkeren",
-  "engines": {
-    "vscode": "^0.10.1"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onCommand:joinLines.joinLines"
-  ],
-  "main": "./out/src/extension",
-  "contributes": {
-    "commands": [
-      {
-        "command": "joinLines.joinLines",
-        "title": "Join lines"
-      }
+    "name": "joinlines",
+    "displayName": "JoinLines",
+    "description": "Adds join lines command to VS Code",
+    "galleryBanner" : {
+		"color": "#49FF00",
+		"theme" : "dark"
+	},
+    "version": "0.1.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/webdokkeren/vscode-join-lines"
+    },
+    "publisher": "webdokkeren",
+    "engines": {
+        "vscode": "^0.10.1"
+    },
+    "categories": [
+        "Other"
     ],
-    "keybindings": [
-      {
-        "command": "joinLines.joinLines",
-        "key": "Ctrl+j"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-    "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
-  },
-  "devDependencies": {
-    "typescript": "^1.6.2",
-    "vscode": "0.10.x"
-  },
-  "dependencies": {
-    "lodash": "^3.10.1"
-  }
+    "activationEvents": [
+        "onCommand:joinLines.joinLines"
+    ],
+    "main": "./out/src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "joinLines.joinLines",
+                "title": "Join lines"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "joinLines.joinLines",
+                "key": "Ctrl+j"
+            },
+            {
+                "command": "joinLines.joinLines",
+                "key": "cmd+j"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
+        "compile": "node ./node_modules/vscode/bin/compile -watch -p ./"
+    },
+    "devDependencies": {
+        "typescript": "^1.6.2",
+        "vscode": "0.10.x"
+    },
+    "dependencies": {
+        "lodash": "^3.10.1"
+    }
 }
