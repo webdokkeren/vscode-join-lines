@@ -21,29 +21,25 @@ export function activate(context: vscode.ExtensionContext) {
 	 * Now we provide the implementation of the command with registerCommand
 	 * The commandId parameter must match the command field in package.json
      */
-	var disposable = vscode.commands.registerCommand('joinLines.joinLines', () => {
-        joinLines();
-	});
-
+	var disposable = vscode.commands.registerTextEditorCommand('joinLines.joinLines', joinLines);
 	context.subscriptions.push(disposable);
 }
 
-function joinLines () {
-    const editor = vscode.window.activeTextEditor;
+function joinLines (textEditor) {
 
     /** If editor is undefined just return */
-    if(editor == undefined) {
+    if(textEditor == undefined) {
         console.log('JoinLines: No editor');
         return;
     }
 
-    const selection = editor.selection;
+    const selection = textEditor.selection;
     const selectedLine = selection.start.line;
-    const totalLines = editor.document.lineCount;
+    const totalLines = textEditor.document.lineCount;
     const nextLineNum = selectedLine + 1;
     const lineAfterNextLineNum = nextLineNum + 1;
 
-    const startLine = editor.document.lineAt(selection.end.line);
+    const startLine = textEditor.document.lineAt(selection.end.line);
     const startText = _.trimRight(startLine.text);
 
     /** Return if there are no lines below the current selected one */
@@ -53,12 +49,12 @@ function joinLines () {
     }
 
     /** Let the "joining" begin */
-    editor.edit((editBuilder) => {
+    textEditor.edit((editBuilder) => {
         console.log('JoinLines: Joining lines');
-        const nextLine = editor.document.lineAt(nextLineNum);
+        const nextLine = textEditor.document.lineAt(nextLineNum);
         const nextLineText = nextLine.text;
 
-        joinThem(editor, editBuilder, selectedLine, nextLineText);
+        joinThem(textEditor, editBuilder, selectedLine, nextLineText);
     }).then(() => {
         console.log('JoinLines: Lines joined. Setting selection');
 
@@ -68,7 +64,7 @@ function joinLines () {
         const newSelection: vscode.Selection = new vscode.Selection(startLineNum, cursorStartPos, startLineNum, cursorStartPos);
         const tagSelections: vscode.Selection[] = [newSelection];
 
-        editor.selections = tagSelections;
+        textEditor.selections = tagSelections;
     }, (err) => {
         console.log('JoinLines: Line joined error:', err);
     });
@@ -93,8 +89,4 @@ function joinThem (editor, editBuilder, line, text){
 
     /** Join the lines using replace */
     editBuilder.replace(rangeToDelete, textToInsert);
-}
-
-/** this method is called when your extension is deactivated */
-export function deactivate() {
 }
