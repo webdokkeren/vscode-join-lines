@@ -74,11 +74,20 @@ function joinLines () {
     });
 }
 
+/**
+ * Joines two lines.
+ * Trims the second line (text) in the process removing any whitespace before and after the second text (text)
+ * @param {vscode.TextEditor} editor            instance of the active editor
+ * @param {vscode.TextEditorEdit} editBuilder
+ * @param {number} line                         linenumber of the currently selected line
+ * @param {string} text                         text from the line below the currently selected on
+ */
 function joinThem (editor, editBuilder, line, text){
-    const docLine = editor.document.lineAt(line);
-    const docLineText = _.trimRight(docLine.text);
-    const location = new vscode.Position(line, docLineText.length);
-    const textToInsert = text === '' ? docLineText + text : docLineText + ' ' + text;
+    const nextLineText = _.trim(text);
+    const firstLine = editor.document.lineAt(line);
+    const firstLineText = _.trimRight(firstLine.text);
+    const location = new vscode.Position(line, firstLineText.length);
+    const textToInsert = nextLineText === '' ? firstLineText + nextLineText : firstLineText + ' ' + nextLineText;
 
     const rangeToDelete = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line + 1, text.length));
 

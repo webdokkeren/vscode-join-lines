@@ -60,11 +60,20 @@ function joinLines() {
         console.log('JoinLines: Line joined error:', err);
     });
 }
+/**
+ * Joines two lines.
+ * Trims the second line (text) in the process removing any whitespace before and after the second text (text)
+ * @param {vscode.TextEditor} editor            instance of the active editor
+ * @param {vscode.TextEditorEdit} editBuilder
+ * @param {number} line                         linenumber of the currently selected line
+ * @param {string} text                         text from the line below the currently selected on
+ */
 function joinThem(editor, editBuilder, line, text) {
-    var docLine = editor.document.lineAt(line);
-    var docLineText = _.trimRight(docLine.text);
-    var location = new vscode.Position(line, docLineText.length);
-    var textToInsert = text === '' ? docLineText + text : docLineText + ' ' + text;
+    var nextLineText = _.trim(text);
+    var firstLine = editor.document.lineAt(line);
+    var firstLineText = _.trimRight(firstLine.text);
+    var location = new vscode.Position(line, firstLineText.length);
+    var textToInsert = nextLineText === '' ? firstLineText + nextLineText : firstLineText + ' ' + nextLineText;
     var rangeToDelete = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line + 1, text.length));
     /** Join the lines using replace */
     editBuilder.replace(rangeToDelete, textToInsert);
