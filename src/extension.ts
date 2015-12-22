@@ -133,37 +133,33 @@ function joinThem(line: number, editBuilder: vscode.TextEditorEdit): { whitespac
     const matchWhitespaceAtEnd = docLine.text.match(whitespaceAtEndOfLine);
     const whitespaceLength = matchWhitespaceAtEnd[0].length;
 
-    let range;
+    let endRangeChar;
+    let whitespaceLengthAtStart;
+    let replacementText;
 
     /** End of the line */
     if((settings.document.lineCount - 1) == line){
-        range = new vscode.Range(
-            line,
-            docLine.range.end.character - whitespaceLength,
-            nextLineNum,
-            docLine.range.end.character
-        );
-
-        editBuilder.replace(range, '');
-
-        return {
-            whitespaceLengthAtEnd: whitespaceLength,
-            whitespaceLengthAtStart: 0
-        }
+        endRangeChar = docLine.range.end.character;
+        whitespaceLengthAtStart = 0;
+        replacementText = '';
+    } else {
+        let docNextLine = settings.document.lineAt(nextLineNum);
+        endRangeChar = docNextLine.firstNonWhitespaceCharacterIndex;
+        whitespaceLengthAtStart = docNextLine.firstNonWhitespaceCharacterIndex;
+        replacementText = ' ';
     }
 
-    const docNextLine = settings.document.lineAt(nextLineNum);
-    range = new vscode.Range(
+    const range = new vscode.Range(
         line,
         docLine.range.end.character - whitespaceLength,
         nextLineNum,
-        docNextLine.firstNonWhitespaceCharacterIndex
+        endRangeChar
     );
 
-    editBuilder.replace(range, ' ');
+    editBuilder.replace(range, replacementText);
 
     return {
         whitespaceLengthAtEnd: whitespaceLength - 1,
-        whitespaceLengthAtStart: docNextLine.firstNonWhitespaceCharacterIndex
+        whitespaceLengthAtStart: whitespaceLengthAtStart
     }
 }

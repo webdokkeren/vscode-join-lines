@@ -94,22 +94,26 @@ function joinThem(line, editBuilder) {
     var nextLineNum = line + 1;
     var matchWhitespaceAtEnd = docLine.text.match(whitespaceAtEndOfLine);
     var whitespaceLength = matchWhitespaceAtEnd[0].length;
-    var range;
+    var endRangeChar;
+    var whitespaceLengthAtStart;
+    var replacementText;
     /** End of the line */
     if ((settings.document.lineCount - 1) == line) {
-        range = new vscode.Range(line, docLine.range.end.character - whitespaceLength, nextLineNum, docLine.range.end.character);
-        editBuilder.replace(range, '');
-        return {
-            whitespaceLengthAtEnd: whitespaceLength,
-            whitespaceLengthAtStart: 0
-        };
+        endRangeChar = docLine.range.end.character;
+        whitespaceLengthAtStart = 0;
+        replacementText = '';
     }
-    var docNextLine = settings.document.lineAt(nextLineNum);
-    range = new vscode.Range(line, docLine.range.end.character - whitespaceLength, nextLineNum, docNextLine.firstNonWhitespaceCharacterIndex);
-    editBuilder.replace(range, ' ');
+    else {
+        var docNextLine = settings.document.lineAt(nextLineNum);
+        endRangeChar = docNextLine.firstNonWhitespaceCharacterIndex;
+        whitespaceLengthAtStart = docNextLine.firstNonWhitespaceCharacterIndex;
+        replacementText = ' ';
+    }
+    var range = new vscode.Range(line, docLine.range.end.character - whitespaceLength, nextLineNum, endRangeChar);
+    editBuilder.replace(range, replacementText);
     return {
         whitespaceLengthAtEnd: whitespaceLength - 1,
-        whitespaceLengthAtStart: docNextLine.firstNonWhitespaceCharacterIndex
+        whitespaceLengthAtStart: whitespaceLengthAtStart
     };
 }
 //# sourceMappingURL=extension.js.map
