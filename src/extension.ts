@@ -39,7 +39,7 @@ function joinLines (textEditor: vscode.TextEditor) {
     }
 
     settings.document = textEditor.document;
-    const newSelections: { numLinesRemoved: number, selection: vscode.Selection }[] = [];
+    const newSelections: { numLinesRemoved: number, selection: vscode.Selection, originalText: string }[] = [];
 
     /** Let the "joining" begin */
     textEditor.edit(processSelections).then(postProcess);
@@ -48,7 +48,9 @@ function joinLines (textEditor: vscode.TextEditor) {
         /** Process each selection */
         textEditor.selections.forEach(processSelection);
 
+        /** Process a single selection */
         function processSelection(selection: vscode.Selection){
+            /** No selection */
             if (noRangeOneLine(selection)) {
                 return newSelections.push(joinSimple(selection, editBuilder));
             }
@@ -57,7 +59,7 @@ function joinLines (textEditor: vscode.TextEditor) {
                 //TODO: Does not work properly with multiline
                 joinThem(selection.start.line, editBuilder);
 
-                return newSelections.push({ numLinesRemoved: 1, selection });
+                return newSelections.push({ numLinesRemoved: 1, selection, originalText: settings.document.lineAt(selection.start.line).text });
             }
 
             const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
@@ -71,7 +73,9 @@ function joinLines (textEditor: vscode.TextEditor) {
                 numLinesRemoved: selection.end.line - selection.start.line,
                 selection: new vscode.Selection(
                     selection.start.line, selection.start.character,
-                    selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset)
+                    selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
+                ),
+                originalText: settings.document.lineAt(selection.start.line).text
             });
         }
     }
@@ -82,31 +86,38 @@ function joinLines (textEditor: vscode.TextEditor) {
         textEditor.selections = selections;
 
         function selectionPostProcessor(x, i){
-            const { numLinesRemoved, selection } = x;
+            const { numLinesRemoved, selection, originalText } = x;
 
             let numPreviousLinesRemoved = i;
+            let activeLineChar = selection.end.character;
+            let anchorChar;
 
             if(numPreviousLinesRemoved != 0 ) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(x => x.numLinesRemoved).reduce((a, b) => a + b);
+                anchorChar = activeLineChar + _.trim(originalText).length + 1;
+                activeLineChar = activeLineChar + _.trim(originalText).length + 1;
+            } else {
+                anchorChar = selection.start.character;
             }
 
             const newLineNumber = selection.start.line - numPreviousLinesRemoved;
 
             return new vscode.Selection(
                 newLineNumber,
-                selection.start.character,
+                anchorChar,
                 newLineNumber,
-                selection.end.character
+                activeLineChar
             );
         }
     }
 }
 
 function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
+    const currentLine = settings.document.lineAt(selection.start.line);
     //TODO: Does not work with a cursor on last line
     //TODO: Dees not work when cursors following the first are not at the start line
     //TODO: Does not work multiple cursors on one line
-    const newSelectionEnd = settings.document.lineAt(selection.start.line).range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
+    const newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
 
     return {
         numLinesRemoved: 1,
@@ -115,7 +126,8 @@ function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorE
             newSelectionEnd,
             selection.end.line,
             newSelectionEnd
-        )
+        ),
+        originalText: currentLine.text
     }
 }
 
