@@ -12,9 +12,11 @@ This is handy if you want to join the following line with the current one withou
 
 ![Navigation](images/example.gif)
 
-## Installation
+## Install
 
-### Manual Install
+Press F1 in Visual Studio Code, then ext, then select install and type joinlines then hit enter.
+
+## Manual Install
 
 **Mac & Linux**
 ```sh
@@ -30,4 +32,17 @@ cd %USERPROFILE%\.vscode\extensions
 git clone https://github.com/webdokkeren/vscode-join-lines
 cd vscode-join-lines
 npm install
+```
+
+## Configuration
+So the ctrl+j doesn't suit you ? No problem, just reassign it to another keybinding by Going to File -> Preferences -> Keyboard shortcuts
+You can now override the keybinding typing in the following:  
+
+_keybindings.json_
+```json
+[
+    //... Other keybinding overrides
+
+    { "key": "ctrl+k", "command": "joinLines.joinLines", "when": "editorTextFocus" }
+]
 ```
