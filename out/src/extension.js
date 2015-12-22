@@ -3,7 +3,10 @@
  * The module 'vscode' contains the VS Code extensibility API
  */
 var vscode = require('vscode');
-var _ = require('lodash');
+var settings = {
+    document: undefined
+};
+var whitespaceAtEndOfLine = /\s*$/;
 /**
  * this method is called when the extension is activated
  * the extension is activated the very first time joinLines is executed
@@ -27,47 +30,86 @@ function joinLines(textEditor) {
     if (textEditor == undefined) {
         return;
     }
-    var document = textEditor.document;
-    var selection = textEditor.selection;
-    var selectedLine = selection.start.line;
-    var totalLines = document.lineCount;
-    var nextLineNum = selectedLine + 1;
-    var lineAfterNextLineNum = nextLineNum + 1;
-    var startLine = document.lineAt(selection.end.line);
-    var startText = _.trimRight(startLine.text);
-    /** Return if there are no lines below the current selected one */
-    if (lineAfterNextLineNum > totalLines) {
-        return;
-    }
+    settings.document = textEditor.document;
+    var newSelections = [];
     /** Let the "joining" begin */
-    textEditor.edit(function (editBuilder) {
-        var nextLine = document.lineAt(nextLineNum);
-        var nextLineText = nextLine.text;
-        joinThem(document, editBuilder, selectedLine, nextLineText);
-    }).then(function () {
-        var startLineNum = selection.start.line;
-        var cursorStartPos = startText.length + 1;
-        var newSelection = new vscode.Selection(startLineNum, cursorStartPos, startLineNum, cursorStartPos);
-        var tagSelections = [newSelection];
-        textEditor.selections = tagSelections;
-    });
+    textEditor.edit(processSelections).then(postProcess);
+    function processSelections(editBuilder) {
+        /** Process each selection */
+        textEditor.selections.forEach(processSelection);
+        function processSelection(selection) {
+            if (noRangeOneLine(selection)) {
+                return newSelections.push(joinSimple(selection, editBuilder));
+            }
+            if (rangeOneLine(selection)) {
+                //TODO: Does not work properly with multiline
+                joinThem(selection.start.line, editBuilder);
+                return newSelections.push({ numLinesRemoved: 1, selection: selection });
+            }
+            var numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
+            var endCharacterOffset = 0;
+            for (var lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
+                var charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
+                var whitespaceLengths = joinThem(lineIndex, editBuilder);
+                endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
+            }
+            return newSelections.push({
+                numLinesRemoved: selection.end.line - selection.start.line,
+                selection: new vscode.Selection(selection.start.line, selection.start.character, selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset)
+            });
+        }
+    }
+    function postProcess() {
+        var selections = newSelections.map(selectionPostProcessor);
+        textEditor.selections = selections;
+        function selectionPostProcessor(x, i) {
+            var numLinesRemoved = x.numLinesRemoved, selection = x.selection;
+            var numPreviousLinesRemoved = i;
+            if (numPreviousLinesRemoved != 0) {
+                numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
+            }
+            var newLineNumber = selection.start.line - numPreviousLinesRemoved;
+            return new vscode.Selection(newLineNumber, selection.start.character, newLineNumber, selection.end.character);
+        }
+    }
 }
-/**
- * Joines two lines.
- * Trims the second line (text) in the process removing any whitespace before and after the second text (text)
- * @param {vscode.TextEditor} editor            instance of the active editor
- * @param {vscode.TextEditorEdit} editBuilder
- * @param {number} line                         linenumber of the currently selected line
- * @param {string} text                         text from the line below the currently selected on
- */
-function joinThem(document, editBuilder, line, text) {
-    var nextLineText = _.trim(text);
-    var firstLine = document.lineAt(line);
-    var firstLineText = _.trimRight(firstLine.text);
-    var location = new vscode.Position(line, firstLineText.length);
-    var textToInsert = nextLineText === '' ? firstLineText + nextLineText : firstLineText + ' ' + nextLineText;
-    var rangeToDelete = new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line + 1, text.length));
-    /** Join the lines using replace */
-    editBuilder.replace(rangeToDelete, textToInsert);
+function joinSimple(selection, editBuilder) {
+    //TODO: Does not work with a cursor on last line
+    //TODO: Dees not work when cursors following the first are not at the start line
+    //TODO: Does not work multiple cursors on one line
+    var newSelectionEnd = settings.document.lineAt(selection.start.line).range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
+    return {
+        numLinesRemoved: 1,
+        selection: new vscode.Selection(selection.start.line, newSelectionEnd, selection.end.line, newSelectionEnd)
+    };
+}
+function rangeOneLine(range) {
+    return range.start.line === range.end.line;
+}
+function noRangeOneLine(range) {
+    return rangeOneLine(range) && range.start.character === range.end.character;
+}
+function joinThem(line, editBuilder) {
+    var docLine = settings.document.lineAt(line);
+    var nextLineNum = line + 1;
+    var matchWhitespaceAtEnd = docLine.text.match(whitespaceAtEndOfLine);
+    var whitespaceLength = matchWhitespaceAtEnd[0].length;
+    var range;
+    /** End of the line */
+    if ((settings.document.lineCount - 1) == line) {
+        range = new vscode.Range(line, docLine.range.end.character - whitespaceLength, nextLineNum, docLine.range.end.character);
+        editBuilder.replace(range, '');
+        return {
+            whitespaceLengthAtEnd: whitespaceLength,
+            whitespaceLengthAtStart: 0
+        };
+    }
+    var docNextLine = settings.document.lineAt(nextLineNum);
+    range = new vscode.Range(line, docLine.range.end.character - whitespaceLength, nextLineNum, docNextLine.firstNonWhitespaceCharacterIndex);
+    editBuilder.replace(range, ' ');
+    return {
+        whitespaceLengthAtEnd: whitespaceLength - 1,
+        whitespaceLengthAtStart: docNextLine.firstNonWhitespaceCharacterIndex
+    };
 }
 //# sourceMappingURL=extension.js.map
