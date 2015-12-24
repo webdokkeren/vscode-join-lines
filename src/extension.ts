@@ -87,13 +87,18 @@ function joinLines (textEditor: vscode.TextEditor) {
     }
 
     function postProcess(){
+        /** Used to keep track of the charecter length */
         const previousSelection: {charLength: number} = {
             charLength: 0
         };
+
+        /** Process selections using the Array map function */
         const selections = newSelections.map(selectionPostProcessor);
 
+        /** Set new selections in the editor */
         textEditor.selections = selections;
 
+        /** Processes all selection and sets new selection for each one */
         function selectionPostProcessor(x, i){
             const { numLinesRemoved, selection, originalText } = x;
 
@@ -114,6 +119,7 @@ function joinLines (textEditor: vscode.TextEditor) {
 
             const newLineNumber = selection.start.line - numPreviousLinesRemoved;
 
+            /** Return new selection */
             return new vscode.Selection(
                 newLineNumber,
                 anchorChar,
@@ -126,7 +132,6 @@ function joinLines (textEditor: vscode.TextEditor) {
 
 function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
     const currentLine = settings.document.lineAt(selection.start.line);
-    //TODO: Does not work with a cursor on last line
     //TODO: Dees not work when cursors following the first are not at the start line
     //TODO: Does not work multiple cursors on one line
     const newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
@@ -143,10 +148,12 @@ function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorE
     }
 }
 
+/** Determines whether the input range only includes one line */
 function rangeOneLine(range: vscode.Range): boolean {
     return range.start.line === range.end.line;
 }
 
+/** Determines whether the input range doesn't have a range and is on one line */
 function noRangeOneLine(range: vscode.Range): boolean {
     return rangeOneLine(range) && range.start.character === range.end.character;
 }
@@ -161,7 +168,7 @@ function joinThem(line: number, editBuilder: vscode.TextEditorEdit): { whitespac
     let whitespaceLengthAtStart;
     let replacementText;
 
-    /** End of the line */
+    /** End of the line, no more lines in the document */
     if((settings.document.lineCount - 1) == line){
         endRangeChar = docLine.range.end.character;
         whitespaceLengthAtStart = 0;

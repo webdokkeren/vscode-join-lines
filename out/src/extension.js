@@ -68,11 +68,15 @@ function joinLines(textEditor) {
         }
     }
     function postProcess() {
+        /** Used to keep track of the charecter length */
         var previousSelection = {
             charLength: 0
         };
+        /** Process selections using the Array map function */
         var selections = newSelections.map(selectionPostProcessor);
+        /** Set new selections in the editor */
         textEditor.selections = selections;
+        /** Processes all selection and sets new selection for each one */
         function selectionPostProcessor(x, i) {
             var numLinesRemoved = x.numLinesRemoved, selection = x.selection, originalText = x.originalText;
             var numPreviousLinesRemoved = i;
@@ -90,13 +94,13 @@ function joinLines(textEditor) {
                 previousSelection.charLength = previousSelection.charLength + activeLineChar;
             }
             var newLineNumber = selection.start.line - numPreviousLinesRemoved;
+            /** Return new selection */
             return new vscode.Selection(newLineNumber, anchorChar, newLineNumber, activeLineChar);
         }
     }
 }
 function joinSimple(selection, editBuilder) {
     var currentLine = settings.document.lineAt(selection.start.line);
-    //TODO: Does not work with a cursor on last line
     //TODO: Dees not work when cursors following the first are not at the start line
     //TODO: Does not work multiple cursors on one line
     var newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
@@ -106,9 +110,11 @@ function joinSimple(selection, editBuilder) {
         originalText: currentLine.text
     };
 }
+/** Determines whether the input range only includes one line */
 function rangeOneLine(range) {
     return range.start.line === range.end.line;
 }
+/** Determines whether the input range doesn't have a range and is on one line */
 function noRangeOneLine(range) {
     return rangeOneLine(range) && range.start.character === range.end.character;
 }
@@ -120,7 +126,7 @@ function joinThem(line, editBuilder) {
     var endRangeChar;
     var whitespaceLengthAtStart;
     var replacementText;
-    /** End of the line */
+    /** End of the line, no more lines in the document */
     if ((settings.document.lineCount - 1) == line) {
         endRangeChar = docLine.range.end.character;
         whitespaceLengthAtStart = 0;
