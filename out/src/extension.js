@@ -36,8 +36,12 @@ function joinLines(textEditor) {
     /** Let the "joining" begin */
     textEditor.edit(processSelections).then(postProcess);
     function processSelections(editBuilder) {
+        var firstSelectionLine = textEditor.selections[0].end.line;
+        var lastSeletionLine = textEditor.selections[textEditor.selections.length - 1].end.line;
+        /** Reverse selection if active cusor is not on first selection line */
+        var editorSelections = firstSelectionLine > lastSeletionLine ? textEditor.selections.reverse() : textEditor.selections;
         /** Process each selection */
-        textEditor.selections.forEach(processSelection);
+        editorSelections.forEach(processSelection);
         /** Process a single selection */
         function processSelection(selection) {
             /** No selection */
@@ -64,20 +68,26 @@ function joinLines(textEditor) {
         }
     }
     function postProcess() {
+        var previousSelection = {
+            charLength: 0
+        };
         var selections = newSelections.map(selectionPostProcessor);
         textEditor.selections = selections;
         function selectionPostProcessor(x, i) {
             var numLinesRemoved = x.numLinesRemoved, selection = x.selection, originalText = x.originalText;
             var numPreviousLinesRemoved = i;
-            var activeLineChar = selection.end.character;
+            var activeLineChar;
             var anchorChar;
             if (numPreviousLinesRemoved != 0) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
-                anchorChar = activeLineChar + _.trim(originalText).length + 1;
-                activeLineChar = activeLineChar + _.trim(originalText).length + 1;
+                anchorChar = previousSelection.charLength + _.trim(originalText).length + 1;
+                activeLineChar = previousSelection.charLength + _.trim(originalText).length + 1;
+                previousSelection.charLength = activeLineChar;
             }
             else {
                 anchorChar = selection.start.character;
+                activeLineChar = selection.end.character;
+                previousSelection.charLength = previousSelection.charLength + activeLineChar;
             }
             var newLineNumber = selection.start.line - numPreviousLinesRemoved;
             return new vscode.Selection(newLineNumber, anchorChar, newLineNumber, activeLineChar);
