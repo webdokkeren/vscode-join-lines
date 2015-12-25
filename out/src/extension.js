@@ -53,24 +53,27 @@ function joinLines(textEditor) {
                 joinThem(selection.start.line, editBuilder);
                 return newSelections.push({ numLinesRemoved: 1, selection: selection, originalText: settings.document.lineAt(selection.start.line).text });
             }
-            var numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
-            var endCharacterOffset = 0;
-            for (var lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
-                var charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
-                var whitespaceLengths = joinThem(lineIndex, editBuilder);
-                endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
-            }
-            return newSelections.push({
-                numLinesRemoved: selection.end.line - selection.start.line,
-                selection: new vscode.Selection(selection.start.line, selection.start.character, selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset),
-                originalText: settings.document.lineAt(selection.start.line).text
-            });
+            // const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
+            // let endCharacterOffset = 0;
+            // for (let lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
+            //     const charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
+            //     const whitespaceLengths = joinThem(lineIndex, editBuilder);
+            //     endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
+            // }
+            // return newSelections.push({
+            //     numLinesRemoved: selection.end.line - selection.start.line,
+            //     selection: new vscode.Selection(
+            //         selection.start.line, selection.start.character,
+            //         selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
+            //     ),
+            //     originalText: settings.document.lineAt(selection.start.line).text
+            // });
         }
     }
     function postProcess() {
         /** Used to keep track of the charecter length */
-        var previousSelection = {
-            charLength: 0
+        var previousSelections = {
+            totalLength: 0
         };
         /** Process selections using the Array map function */
         var selections = newSelections.map(selectionPostProcessor);
@@ -84,14 +87,14 @@ function joinLines(textEditor) {
             var anchorChar;
             if (numPreviousLinesRemoved != 0) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
-                anchorChar = previousSelection.charLength + _.trim(originalText).length + 1;
-                activeLineChar = previousSelection.charLength + _.trim(originalText).length + 1;
-                previousSelection.charLength = activeLineChar;
+                anchorChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                previousSelections.totalLength = activeLineChar;
             }
             else {
                 anchorChar = selection.start.character;
                 activeLineChar = selection.end.character;
-                previousSelection.charLength = previousSelection.charLength + activeLineChar;
+                previousSelections.totalLength = previousSelections.totalLength + activeLineChar;
             }
             var newLineNumber = selection.start.line - numPreviousLinesRemoved;
             /** Return new selection */

@@ -68,28 +68,28 @@ function joinLines (textEditor: vscode.TextEditor) {
                 return newSelections.push({ numLinesRemoved: 1, selection, originalText: settings.document.lineAt(selection.start.line).text });
             }
 
-            const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
-            let endCharacterOffset = 0;
-            for (let lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
-                const charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
-                const whitespaceLengths = joinThem(lineIndex, editBuilder);
-                endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
-            }
-            return newSelections.push({
-                numLinesRemoved: selection.end.line - selection.start.line,
-                selection: new vscode.Selection(
-                    selection.start.line, selection.start.character,
-                    selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
-                ),
-                originalText: settings.document.lineAt(selection.start.line).text
-            });
+            // const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
+            // let endCharacterOffset = 0;
+            // for (let lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
+            //     const charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
+            //     const whitespaceLengths = joinThem(lineIndex, editBuilder);
+            //     endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
+            // }
+            // return newSelections.push({
+            //     numLinesRemoved: selection.end.line - selection.start.line,
+            //     selection: new vscode.Selection(
+            //         selection.start.line, selection.start.character,
+            //         selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
+            //     ),
+            //     originalText: settings.document.lineAt(selection.start.line).text
+            // });
         }
     }
 
     function postProcess(){
         /** Used to keep track of the charecter length */
-        const previousSelection: {charLength: number} = {
-            charLength: 0
+        const previousSelections: {totalLength: number} = {
+            totalLength: 0
         };
 
         /** Process selections using the Array map function */
@@ -108,13 +108,13 @@ function joinLines (textEditor: vscode.TextEditor) {
 
             if(numPreviousLinesRemoved != 0 ) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(x => x.numLinesRemoved).reduce((a, b) => a + b);
-                anchorChar = previousSelection.charLength + _.trim(originalText).length + 1;
-                activeLineChar = previousSelection.charLength + _.trim(originalText).length + 1;
-                previousSelection.charLength = activeLineChar;
+                anchorChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                previousSelections.totalLength = activeLineChar;
             } else {
                 anchorChar = selection.start.character;
                 activeLineChar = selection.end.character;
-                previousSelection.charLength = previousSelection.charLength + activeLineChar;
+                previousSelections.totalLength = previousSelections.totalLength + activeLineChar;
             }
 
             const newLineNumber = selection.start.line - numPreviousLinesRemoved;
