@@ -5,8 +5,9 @@
 import * as vscode from 'vscode';
 import _ = require('lodash');
 
-const settings: { document: vscode.TextDocument } = {
-    document: undefined
+const settings: { document: vscode.TextDocument, multiSelections: boolean } = {
+    document: undefined,
+    multiSelections: false
 };
 
 const whitespaceAtEndOfLine = /\s*$/;
@@ -34,7 +35,9 @@ function joinLines (textEditor: vscode.TextEditor) {
     }
 
     settings.document = textEditor.document;
-    const newSelections: { numLinesRemoved: number, selection: vscode.Selection, originalText: string }[] = [];
+
+    /** Create array for new selections */
+    const newSelections: { numLinesRemoved: number, isRangeSelection: boolean, selection: vscode.Selection, originalText: string }[] = [];
 
     /** Let the "joining" begin */
     textEditor.edit(processSelections).then(postProcess);
@@ -42,6 +45,9 @@ function joinLines (textEditor: vscode.TextEditor) {
     function processSelections(editBuilder: vscode.TextEditorEdit) {
         const firstSelectionLine = textEditor.selections[0].end.line;
         const lastSeletionLine = textEditor.selections[textEditor.selections.length - 1].end.line;
+
+        /** Determine if there are multiple selections */
+        settings.multiSelections = firstSelectionLine != lastSeletionLine;
 
         /** Reverse selection if active cusor is not on first selection line */
         const editorSelections = firstSelectionLine > lastSeletionLine ? textEditor.selections.reverse() : textEditor.selections;
@@ -59,6 +65,7 @@ function joinLines (textEditor: vscode.TextEditor) {
             if (rangeOneLine(selection)) {
                 return newSelections.push(joinSelection(selection, editBuilder));
             }
+
         }
     }
 
@@ -88,7 +95,7 @@ function joinLines (textEditor: vscode.TextEditor) {
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
                 previousSelections.totalLength = activeLineChar;
 
-            } if(numPreviousLinesRemoved != 0 && isRangeSelection) {
+            } else if(numPreviousLinesRemoved != 0 && isRangeSelection) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(x => x.numLinesRemoved).reduce((a, b) => a + b);
                 anchorChar = previousSelections.totalLength + 1;
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
@@ -116,9 +123,8 @@ function joinLines (textEditor: vscode.TextEditor) {
 /**
  * This function joins lines with any range selections
  */
-function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
+function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit): { numLinesRemoved: number, isRangeSelection: boolean, selection: vscode.Selection, originalText: string } {
     const currentLine = settings.document.lineAt(selection.start.line);
-    //TODO: Dees not work when cursors following the first are not at the start line
     const newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
 
     return {
@@ -137,20 +143,29 @@ function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorE
 /**
  * This function joins lines with range selections
  */
-function joinSelection(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
+function joinSelection(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit) : { numLinesRemoved: number, isRangeSelection: boolean, selection: vscode.Selection, originalText: string } {
     const newSelectionEnd = joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
 
-    return {
+    /** Create default joinedSelection object */
+    const joinedSelection = {
         numLinesRemoved: 1,
-        isRangeSelection: true,
-        selection: new vscode.Selection(
+        isRangeSelection: false,
+        selection,
+        originalText: settings.document.lineAt(selection.start.line).text
+    }
+
+    /** Create new selection if there are multiple selections */
+    if(settings.multiSelections) {
+        joinedSelection.selection = new vscode.Selection(
             selection.start.line,
             selection.start.character,
             selection.end.line,
             newSelectionEnd
-        ),
-        originalText: settings.document.lineAt(selection.start.line).text
+        );
+        joinedSelection.isRangeSelection = true;
     }
+
+    return joinedSelection;
 }
 
 /** Determines whether the input range only includes one line */

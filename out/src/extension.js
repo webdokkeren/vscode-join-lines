@@ -5,7 +5,8 @@
 var vscode = require('vscode');
 var _ = require('lodash');
 var settings = {
-    document: undefined
+    document: undefined,
+    multiSelections: false
 };
 var whitespaceAtEndOfLine = /\s*$/;
 /**
@@ -28,12 +29,15 @@ function joinLines(textEditor) {
         return;
     }
     settings.document = textEditor.document;
+    /** Create array for new selections */
     var newSelections = [];
     /** Let the "joining" begin */
     textEditor.edit(processSelections).then(postProcess);
     function processSelections(editBuilder) {
         var firstSelectionLine = textEditor.selections[0].end.line;
         var lastSeletionLine = textEditor.selections[textEditor.selections.length - 1].end.line;
+        /** Determine if there are multiple selections */
+        settings.multiSelections = firstSelectionLine != lastSeletionLine;
         /** Reverse selection if active cusor is not on first selection line */
         var editorSelections = firstSelectionLine > lastSeletionLine ? textEditor.selections.reverse() : textEditor.selections;
         /** Process each selection */
@@ -70,7 +74,7 @@ function joinLines(textEditor) {
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
                 previousSelections.totalLength = activeLineChar;
             }
-            if (numPreviousLinesRemoved != 0 && isRangeSelection) {
+            else if (numPreviousLinesRemoved != 0 && isRangeSelection) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
                 anchorChar = previousSelections.totalLength + 1;
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
@@ -92,7 +96,6 @@ function joinLines(textEditor) {
  */
 function joinSimple(selection, editBuilder) {
     var currentLine = settings.document.lineAt(selection.start.line);
-    //TODO: Dees not work when cursors following the first are not at the start line
     var newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
     return {
         numLinesRemoved: 1,
@@ -106,12 +109,19 @@ function joinSimple(selection, editBuilder) {
  */
 function joinSelection(selection, editBuilder) {
     var newSelectionEnd = joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
-    return {
+    /** Create default joinedSelection object */
+    var joinedSelection = {
         numLinesRemoved: 1,
-        isRangeSelection: true,
-        selection: new vscode.Selection(selection.start.line, selection.start.character, selection.end.line, newSelectionEnd),
+        isRangeSelection: false,
+        selection: selection,
         originalText: settings.document.lineAt(selection.start.line).text
     };
+    /** Create new selection if there are multiple selections */
+    if (settings.multiSelections) {
+        joinedSelection.selection = new vscode.Selection(selection.start.line, selection.start.character, selection.end.line, newSelectionEnd);
+        joinedSelection.isRangeSelection = true;
+    }
+    return joinedSelection;
 }
 /** Determines whether the input range only includes one line */
 function rangeOneLine(range) {
