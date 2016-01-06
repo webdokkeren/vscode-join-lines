@@ -3,10 +3,10 @@
     "displayName": "JoinLines",
     "description": "Adds join lines command (ctrl+j / cmd+j) known from Sublime Text to VS Code",
     "galleryBanner" : {
-		"color": "#49FF00",
+		"color": "#2F312E",
 		"theme" : "dark"
 	},
-    "version": "1.1.0",
+    "version": "1.1.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/webdokkeren/vscode-join-lines"
