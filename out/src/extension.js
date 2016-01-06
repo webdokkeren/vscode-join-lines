@@ -14,10 +14,6 @@ var whitespaceAtEndOfLine = /\s*$/;
  */
 function activate(context) {
     /**
-     * This following lines of code will only be executed once the extension is activated
-     */
-    console.log('Join lines extension activated!');
-    /**
      * The command has been defined in the package.json file
      * Now we provide the implementation of the command with registerCommand
      * The commandId parameter must match the command field in package.json
@@ -49,25 +45,8 @@ function joinLines(textEditor) {
                 return newSelections.push(joinSimple(selection, editBuilder));
             }
             if (rangeOneLine(selection)) {
-                //TODO: Does not work properly with multiline
-                joinThem(selection.start.line, editBuilder);
-                return newSelections.push({ numLinesRemoved: 1, selection: selection, originalText: settings.document.lineAt(selection.start.line).text });
+                return newSelections.push(joinSelection(selection, editBuilder));
             }
-            // const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
-            // let endCharacterOffset = 0;
-            // for (let lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
-            //     const charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
-            //     const whitespaceLengths = joinThem(lineIndex, editBuilder);
-            //     endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
-            // }
-            // return newSelections.push({
-            //     numLinesRemoved: selection.end.line - selection.start.line,
-            //     selection: new vscode.Selection(
-            //         selection.start.line, selection.start.character,
-            //         selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
-            //     ),
-            //     originalText: settings.document.lineAt(selection.start.line).text
-            // });
         }
     }
     function postProcess() {
@@ -81,13 +60,19 @@ function joinLines(textEditor) {
         textEditor.selections = selections;
         /** Processes all selection and sets new selection for each one */
         function selectionPostProcessor(x, i) {
-            var numLinesRemoved = x.numLinesRemoved, selection = x.selection, originalText = x.originalText;
+            var numLinesRemoved = x.numLinesRemoved, selection = x.selection, originalText = x.originalText, isRangeSelection = x.isRangeSelection;
             var numPreviousLinesRemoved = i;
             var activeLineChar;
             var anchorChar;
-            if (numPreviousLinesRemoved != 0) {
+            if (numPreviousLinesRemoved != 0 && !isRangeSelection) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
                 anchorChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                previousSelections.totalLength = activeLineChar;
+            }
+            if (numPreviousLinesRemoved != 0 && isRangeSelection) {
+                numPreviousLinesRemoved = newSelections.slice(0, i).map(function (x) { return x.numLinesRemoved; }).reduce(function (a, b) { return a + b; });
+                anchorChar = previousSelections.totalLength + 1;
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
                 previousSelections.totalLength = activeLineChar;
             }
@@ -102,15 +87,30 @@ function joinLines(textEditor) {
         }
     }
 }
+/**
+ * This function joins lines with any range selections
+ */
 function joinSimple(selection, editBuilder) {
     var currentLine = settings.document.lineAt(selection.start.line);
     //TODO: Dees not work when cursors following the first are not at the start line
-    //TODO: Does not work multiple cursors on one line
     var newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
     return {
         numLinesRemoved: 1,
+        isRangeSelection: false,
         selection: new vscode.Selection(selection.start.line, newSelectionEnd, selection.end.line, newSelectionEnd),
         originalText: currentLine.text
+    };
+}
+/**
+ * This function joins lines with range selections
+ */
+function joinSelection(selection, editBuilder) {
+    var newSelectionEnd = joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
+    return {
+        numLinesRemoved: 1,
+        isRangeSelection: true,
+        selection: new vscode.Selection(selection.start.line, selection.start.character, selection.end.line, newSelectionEnd),
+        originalText: settings.document.lineAt(selection.start.line).text
     };
 }
 /** Determines whether the input range only includes one line */

@@ -18,11 +18,6 @@ const whitespaceAtEndOfLine = /\s*$/;
 export function activate(context: vscode.ExtensionContext) {
 
 	/**
-	 * This following lines of code will only be executed once the extension is activated
-     */
-	console.log('Join lines extension activated!');
-
-	/**
      * The command has been defined in the package.json file
 	 * Now we provide the implementation of the command with registerCommand
 	 * The commandId parameter must match the command field in package.json
@@ -62,27 +57,8 @@ function joinLines (textEditor: vscode.TextEditor) {
             }
 
             if (rangeOneLine(selection)) {
-                //TODO: Does not work properly with multiline
-                joinThem(selection.start.line, editBuilder);
-
-                return newSelections.push({ numLinesRemoved: 1, selection, originalText: settings.document.lineAt(selection.start.line).text });
+                return newSelections.push(joinSelection(selection, editBuilder));
             }
-
-            // const numberOfCharactersOnFirstLine = settings.document.lineAt(selection.start.line).range.end.character;
-            // let endCharacterOffset = 0;
-            // for (let lineIndex = selection.start.line; lineIndex <= selection.end.line - 1; lineIndex++) {
-            //     const charactersInLine = lineIndex == selection.end.line - 1 ? selection.end.character + 1 : settings.document.lineAt(lineIndex + 1).range.end.character + 1;
-            //     const whitespaceLengths = joinThem(lineIndex, editBuilder);
-            //     endCharacterOffset += charactersInLine - whitespaceLengths.whitespaceLengthAtEnd - whitespaceLengths.whitespaceLengthAtStart;
-            // }
-            // return newSelections.push({
-            //     numLinesRemoved: selection.end.line - selection.start.line,
-            //     selection: new vscode.Selection(
-            //         selection.start.line, selection.start.character,
-            //         selection.start.line, numberOfCharactersOnFirstLine + endCharacterOffset
-            //     ),
-            //     originalText: settings.document.lineAt(selection.start.line).text
-            // });
         }
     }
 
@@ -100,17 +76,24 @@ function joinLines (textEditor: vscode.TextEditor) {
 
         /** Processes all selection and sets new selection for each one */
         function selectionPostProcessor(x, i){
-            const { numLinesRemoved, selection, originalText } = x;
+            const { numLinesRemoved, selection, originalText, isRangeSelection } = x;
 
             let numPreviousLinesRemoved = i;
             let activeLineChar;
             let anchorChar;
 
-            if(numPreviousLinesRemoved != 0 ) {
+            if(numPreviousLinesRemoved != 0 && !isRangeSelection) {
                 numPreviousLinesRemoved = newSelections.slice(0, i).map(x => x.numLinesRemoved).reduce((a, b) => a + b);
                 anchorChar = previousSelections.totalLength + _.trim(originalText).length + 1;
                 activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
                 previousSelections.totalLength = activeLineChar;
+
+            } if(numPreviousLinesRemoved != 0 && isRangeSelection) {
+                numPreviousLinesRemoved = newSelections.slice(0, i).map(x => x.numLinesRemoved).reduce((a, b) => a + b);
+                anchorChar = previousSelections.totalLength + 1;
+                activeLineChar = previousSelections.totalLength + _.trim(originalText).length + 1;
+                previousSelections.totalLength = activeLineChar;
+
             } else {
                 anchorChar = selection.start.character;
                 activeLineChar = selection.end.character;
@@ -130,14 +113,17 @@ function joinLines (textEditor: vscode.TextEditor) {
     }
 }
 
+/**
+ * This function joins lines with any range selections
+ */
 function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
     const currentLine = settings.document.lineAt(selection.start.line);
     //TODO: Dees not work when cursors following the first are not at the start line
-    //TODO: Does not work multiple cursors on one line
     const newSelectionEnd = currentLine.range.end.character - joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
 
     return {
         numLinesRemoved: 1,
+        isRangeSelection: false,
         selection: new vscode.Selection(
             selection.start.line,
             newSelectionEnd,
@@ -145,6 +131,25 @@ function joinSimple(selection: vscode.Selection, editBuilder: vscode.TextEditorE
             newSelectionEnd
         ),
         originalText: currentLine.text
+    }
+}
+
+/**
+ * This function joins lines with range selections
+ */
+function joinSelection(selection: vscode.Selection, editBuilder: vscode.TextEditorEdit){
+    const newSelectionEnd = joinThem(selection.start.line, editBuilder).whitespaceLengthAtEnd;
+
+    return {
+        numLinesRemoved: 1,
+        isRangeSelection: true,
+        selection: new vscode.Selection(
+            selection.start.line,
+            selection.start.character,
+            selection.end.line,
+            newSelectionEnd
+        ),
+        originalText: settings.document.lineAt(selection.start.line).text
     }
 }
 
@@ -194,3 +199,4 @@ function joinThem(line: number, editBuilder: vscode.TextEditorEdit): { whitespac
         whitespaceLengthAtStart: whitespaceLengthAtStart
     }
 }
+
